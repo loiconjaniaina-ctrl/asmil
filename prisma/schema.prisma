@@ -1,0 +1,65 @@
+// Prisma schema for PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Personnel/Users table
+model User {
+  id        String   @id @default(cuid())
+  nom       String
+  prenom    String
+  email     String   @unique
+  password  String
+  role      Role     @default(SECRETAIRE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("personnel")
+}
+
+// Contact form submissions
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  formation String
+  message   String
+  status    ContactStatus @default(NOUVEAU)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contacts")
+}
+
+// Formations/Courses
+model Formation {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  duration    String
+  category    String
+  price       Float?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("formations")
+}
+
+enum Role {
+  ADMIN
+  SECRETAIRE
+}
+
+enum ContactStatus {
+  NOUVEAU
+  EN_COURS
+  TRAITE
+}
