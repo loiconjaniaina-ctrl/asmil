@@ -33,14 +33,14 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const menuItems = [
-  { title: "Tableau de bord", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Étudiants", url: "/dashboard/students", icon: Users },
-  { title: "Enseignants", url: "/dashboard/teachers", icon: GraduationCap },
-  { title: "Cours", url: "/dashboard/courses", icon: BookOpen },
-  { title: "Inscriptions", url: "/dashboard/enrollments", icon: UserPlus },
-  { title: "Notes", url: "/dashboard/grades", icon: FileText },
-  { title: "Présences", url: "/dashboard/attendance", icon: Calendar },
-  { title: "Paiements", url: "/dashboard/payments", icon: CreditCard },
+  { title: "Tableau de bord", url: "/secretaire", icon: LayoutDashboard },
+  { title: "Étudiants", url: "/secretaire/students", icon: Users },
+  { title: "Enseignants", url: "/secretaire/teachers", icon: GraduationCap },
+  { title: "Cours", url: "/secretatire/courses", icon: BookOpen },
+  { title: "Inscriptions", url: "/secretaire/enrollments", icon: UserPlus },
+  { title: "Notes", url: "/secretaire/grades", icon: FileText },
+  { title: "Présences", url: "/secretaire/attendance", icon: Calendar },
+  { title: "Paiements", url: "/secretaire/payments", icon: CreditCard },
 ]
 
 export function AppSidebar() {

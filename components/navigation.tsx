@@ -90,11 +90,9 @@ export function Navigation() {
                 </li>
               ))}
               <li>
-                <Link href="/login" className="px-4 py-2">
                   <Button asChild className="w-full bg-primary hover:bg-primary-dark text-white">
-                    Connexion
+                    <a href="/login">Connexion</a>
                   </Button>
-                </Link>
               </li>
             </ul>
           </div>

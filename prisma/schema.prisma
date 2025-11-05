@@ -1,7 +1,6 @@
-// Prisma schema for PostgreSQL
-
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["jsonProtocol"]
 }
 
 datasource db {
@@ -9,38 +8,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Personnel/Users table
-model User {
-  id        String   @id @default(cuid())
+model personnel {
+  id        String   @id @default(uuid())
   nom       String
   prenom    String
   email     String   @unique
   password  String
-  role      Role     @default(SECRETAIRE)
+  role      Role
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@map("personnel")
 }
 
-// Contact form submissions
-model Contact {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  phone     String
-  formation String
-  message   String
-  status    ContactStatus @default(NOUVEAU)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("contacts")
-}
-
-// Formations/Courses
-model Formation {
-  id          String   @id @default(cuid())
+model formations {
+  id          String   @id @default(uuid())
   title       String
   description String
   duration    String
@@ -49,8 +29,6 @@ model Formation {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  @@map("formations")
 }
 
 enum Role {

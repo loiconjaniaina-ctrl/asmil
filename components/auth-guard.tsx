@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/contexts/auth-context"
@@ -13,33 +12,25 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
-  const { user, isLoading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        router.push("/login")
-      } else if (allowedRoles && !allowedRoles.includes(user.role)) {
-        router.push(user.role === "admin" ? "/admin" : "/dashboard")
-      }
+    if (loading) return
+
+    if (!user) {
+      router.push("/login")
+      return
     }
-  }, [user, isLoading, allowedRoles, router])
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Chargement...</p>
-        </div>
-      </div>
-    )
-  }
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
+      router.push("/login")
+      return
+    }
+  }, [user, loading, allowedRoles, router])
 
-  if (!user || (allowedRoles && !allowedRoles.includes(user.role))) {
-    return null
-  }
+  if (loading) return <p>Chargement...</p>
+  if (!user) return null
 
   return <>{children}</>
 }

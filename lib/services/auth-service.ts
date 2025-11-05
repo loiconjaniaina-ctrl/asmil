@@ -34,11 +34,10 @@ export class AuthService {
       throw new Error(error.error || "Erreur de connexion")
     }
 
-    const data = await response.json()
+    const data: LoginResponse = await response.json()
 
-    // Store token in localStorage
+    // ✅ Store user only (token already in HTTP-only cookie)
     if (typeof window !== "undefined") {
-      localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
     }
 
@@ -48,10 +47,8 @@ export class AuthService {
   static async getCurrentUser(): Promise<User | null> {
     if (typeof window === "undefined") return null
 
-    const token = localStorage.getItem("token")
     const userStr = localStorage.getItem("user")
-
-    if (!token || !userStr) return null
+    if (!userStr) return null
 
     try {
       return JSON.parse(userStr)
@@ -62,40 +59,22 @@ export class AuthService {
 
   static logout(): void {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("token")
       localStorage.removeItem("user")
     }
+
+    // ✅ API call to clear cookie
+    fetch("/api/auth/logout", { method: "POST" })
   }
 
   static async getUsers(): Promise<User[]> {
-    const token = localStorage.getItem("token")
-
-    const response = await fetch(`${this.API_BASE}/users`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error("Erreur lors de la récupération des utilisateurs")
-    }
-
+    const response = await fetch(`${this.API_BASE}/users`)
+    if (!response.ok) throw new Error("Erreur lors de la récupération des utilisateurs")
     return response.json()
   }
 
   static async getUser(userId: string): Promise<User> {
-    const token = localStorage.getItem("token")
-
-    const response = await fetch(`${this.API_BASE}/users/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error("Erreur lors de la récupération de l'utilisateur")
-    }
-
+    const response = await fetch(`${this.API_BASE}/users/${userId}`)
+    if (!response.ok) throw new Error("Erreur lors de la récupération de l'utilisateur")
     return response.json()
   }
 }

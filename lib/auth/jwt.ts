@@ -1,20 +1,17 @@
-import { SignJWT, jwtVerify } from "jose"
+// lib/auth/jwt.ts
+import { SignJWT, jwtVerify, type JWTPayload } from "jose"
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || "fallback-secret-key-change-in-production")
+const SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
 
 export async function createToken(payload: { userId: string; email: string; role: string }) {
-  return await new SignJWT(payload)
+  return await new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(secret)
+    .sign(SECRET)
 }
 
 export async function verifyToken(token: string) {
-  try {
-    const { payload } = await jwtVerify(token, secret)
-    return payload as { userId: string; email: string; role: string }
-  } catch (error) {
-    return null
-  }
+  const { payload } = await jwtVerify(token, SECRET)
+  return payload as JWTPayload & { userId?: string; email?: string; role?: string }
 }

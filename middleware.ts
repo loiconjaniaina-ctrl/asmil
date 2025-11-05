@@ -1,46 +1,55 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { jwtVerify } from "jose"
-
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
+import { verifyToken } from "@/lib/auth/jwt"
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value
-  const { pathname } = req.nextUrl
+  const url = req.nextUrl.clone()
 
-  // ✅ Autoriser librement la page login
-  if (pathname.startsWith("/admin/login")) {
+  // ✅ Autorise login et routes auth
+  if (url.pathname.startsWith("/login") || url.pathname.startsWith("/api/auth")) {
     return NextResponse.next()
   }
 
-  // ✅ pas de token : bloque accès zones privées et renvoie login
-  if (!token) {
-    if (pathname.startsWith("/admin") || pathname.startsWith("/secretaire")) {
-      return NextResponse.redirect(new URL("/admin/login", req.url))
+  // ✅ Vérifie token pour routes protégées
+  if (
+    url.pathname.startsWith("/admin") ||
+    url.pathname.startsWith("/secretaire") ||
+    url.pathname.startsWith("/api/users")
+  ) {
+    if (!token) {
+      // Si route API
+      if (url.pathname.startsWith("/api")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
+      // Sinon page -> redirect login
+      return NextResponse.redirect(new URL("/login", req.url))
     }
-    return NextResponse.next()
+
+    const payload = await verifyToken(token)
+    if (!payload) {
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
+
+    // ✅ Protection admin
+    if (url.pathname.startsWith("/admin") && payload.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
+
+    // ✅ Protection secrétaire
+    if (url.pathname.startsWith("/secretaire") && payload.role !== "SECRETAIRE") {
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
   }
 
-  try {
-    const { payload } = await jwtVerify(token, SECRET)
-    const role = payload.role as string
-
-    // ✅ Secrétaire ne peut pas aller dans /admin
-    if (pathname.startsWith("/admin") && role === "SECRETAIRE") {
-      return NextResponse.redirect(new URL("/secretaire", req.url))
-    }
-
-    // ✅ Admin ne peut pas aller dans /secretaire
-    if (pathname.startsWith("/secretaire") && role === "ADMIN") {
-      return NextResponse.redirect(new URL("/admin", req.url))
-    }
-
-    return NextResponse.next()
-  } catch {
-    return NextResponse.redirect(new URL("/admin/login", req.url))
-  }
+  return NextResponse.next()
 }
 
+// ✅ Les routes protégées
 export const config = {
-  matcher: ["/admin/:path*", "/secretaire/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/secretaire/:path*",
+    "/api/users/:path*",
+  ],
 }

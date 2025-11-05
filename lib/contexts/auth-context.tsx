@@ -1,10 +1,9 @@
+// lib/contexts/auth-context.tsx
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { AuthService } from "@/lib/services/auth-service"
-import Cookies from "js-cookie"
+import React, { createContext, useContext, useEffect, useState } from "react"
 
-interface User {
+type User = {
   id: string
   nom: string
   prenom: string
@@ -12,61 +11,69 @@ interface User {
   role: string
 }
 
-interface AuthContextType {
+type AuthCtx = {
   user: User | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<{ user?: User; error?: string }>
   logout: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthCtx | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const checkAuth = async () => {
+    // essayer de récupérer user depuis server via endpoint /api/auth/me (non-HTTPOnly cannot read cookie from client)
+    // We call a server endpoint which reads cookie and returns user if token valid
+    async function fetchMe() {
       try {
-        // ✅ Vérifie cookie côté client
-        const token = Cookies.get("auth_token")
-        if (!token) {
-          setUser(null)
+        const res = await fetch("/api/auth/me")
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data.user)
         } else {
-          const currentUser = await AuthService.getCurrentUser()
-          setUser(currentUser)
+          setUser(null)
         }
-      } catch (err) {
+      } catch {
         setUser(null)
       } finally {
         setLoading(false)
       }
     }
-
-    checkAuth()
+    fetchMe()
   }, [])
 
   const login = async (email: string, password: string) => {
-  const response = await AuthService.login(email, password)
-  setUser(response.user)
-  return response // ✅ renvoyer le user
-}
-
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        return { error: data.error || "Erreur de connexion" }
+      }
+      // server set cookie; we keep user in state
+      setUser(data.user)
+      return { user: data.user }
+    } catch (err: any) {
+      return { error: err.message || "Erreur réseau" }
+    }
+  }
 
   const logout = async () => {
-    await AuthService.logout()
+    await fetch("/api/auth/logout", { method: "POST" })
     setUser(null)
   }
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) throw new Error("useAuth must be used within an AuthProvider")
-  return context
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider")
+  return ctx
 }
